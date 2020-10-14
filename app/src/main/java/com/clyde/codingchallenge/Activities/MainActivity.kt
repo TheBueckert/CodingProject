@@ -66,8 +66,11 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
         mainActivityViewModel.moviesQueryResultObject.observe(this, Observer {
             // if this is the firstTime initializing the ViewModel it will Initialize the RecyclerView too
             if (defaultInit) {
+                showing_results_text.visibility = View.VISIBLE
                 initRecyclerView()
                 defaultInit = false
+                lets_search_text.visibility = View.GONE
+
             }
             // Observing the LiveData, When it changes it will update the recyclerview,  but only using the Results Array for the Recyclerview
             mainActivityViewModel.moviesQueryResultObject.value?.results?.let { resultsArray ->
@@ -108,7 +111,6 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
         // The first Listener allows the whole SearchView to Be clickable
         main_searchview.setOnClickListener {
             main_searchview.isIconified = false
-            lets_search_text.visibility = View.GONE
             no_results_text.visibility = View.GONE
         }
         // This Listener will set the live data String that will kick off a query in the ViewModel
@@ -116,10 +118,12 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
             override fun onQueryTextSubmit(p0: String?): Boolean {
 
                 main_searchview.clearFocus()
-                main_searchview.setQuery("", false)
 
                 if (isInternetAvailable()) {
-                    if (p0 != null) mainActivityViewModel.setSearchTerm(p0)
+                    if (p0 != null){
+                        showing_results_text.setText("Showing results for: $p0")
+                        mainActivityViewModel.setSearchTerm(p0)
+                    }
                 } else Toast.makeText(applicationContext, "You are not connected to the internet :(", Toast.LENGTH_LONG).show()
 
                 return true
