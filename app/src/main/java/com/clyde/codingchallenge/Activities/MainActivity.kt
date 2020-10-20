@@ -49,11 +49,10 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
     private var searchTerm: String? = null
 
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-       // realm must be initialized with context for viewholder
+        // realm must be initialized with context for viewholder
         Realm.init(this)
         setListeners()
         setUpViewModel()
@@ -78,7 +77,7 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
 
 
             // if the repo returns a null value for the live data, display a server error dialog
-            if (mainActivityViewModel.moviesQueryResultObject.value == null ){
+            if (mainActivityViewModel.moviesQueryResultObject.value == null) {
                 openServerBusyDialog()
             }
 
@@ -100,10 +99,10 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
         })
 
 
-
     }
+
     // this function will intialize the recyclerview if it isn't created otherwise
-    private fun checkRecyclerInitialization(){
+    private fun checkRecyclerInitialization() {
         if (defaultInit) {
             showing_results_text.visibility = View.VISIBLE
             initRecyclerView()
@@ -147,20 +146,6 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
                     }
                     // this starts a loop in confirm or deny until a choice is made
                 } else openDialog()
-                                               /*
-                                                val localResults = mainActivityViewModel.searchLocallyInRealm(searchTerm)
-                                                 if(localResults!=null){
-                            checkRecyclerInitialization()
-                            displayRecyclerView()
-                            movieAdapter.submitList(localResults.toList(), this@MainActivity)
-                            else{
-                            hideRecyclerView()
-                            }
-                            movie_recyclerview.adapter?.notifyDataSetChanged()
-                                               
-                                               */
-
-
                 return true
             }
 
@@ -169,7 +154,7 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
             // the itunes api only allows Approx. 20 searches per minute,
             // if the server returns a 403 error the couroutines will be cancelled and errors will show
 
-            override fun onQueryTextChange(p0: String?): Boolean{
+            override fun onQueryTextChange(p0: String?): Boolean {
                 searchTerm = p0
                 if (isInternetAvailable()) {
                     if (searchTerm != null) {
@@ -177,6 +162,9 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
                         mainActivityViewModel.setSearchTerm(searchTerm!!)
                     }
                 }
+
+
+
                 return true
             }
         })
@@ -185,21 +173,18 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
     // This is the required implementation of the abstract function for clicks, from the ViewHolder Class
 
 
-
-       
     // will load viewMovieActivity with the Result object of the clicked movie
     override fun onMovieClick(result: Result) {
 
-      
-        if(result!=null) {
+
+        if (result != null) {
             val intent = Intent(this, ViewMovieActivity::class.java)
-            intent.putExtra("result", tempResult)
+            intent.putExtra("result", result)
             startActivity(intent)
 
-        }
-        else{
+        } else {
             Log.e(TAG, "onMovieClick: failed to load movie")
-            Toast.makeText(this,"Failed to load movie", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Failed to load movie", Toast.LENGTH_LONG).show()
 
         }
 
@@ -235,25 +220,33 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
                     mainActivityViewModel.setSearchTerm(searchTerm!!)
                 }
             } else openDialog()
-        }
-        else {
-            //TODO
-            Toast.makeText(this, "searching", Toast.LENGTH_LONG).show()
+        } else {
+            val localResults = searchTerm?.let { mainActivityViewModel.searchLocallyInRealm(it) }
+            showing_results_text.setText("Showing results for: $searchTerm")
+
+            if (localResults != null) {
+                checkRecyclerInitialization()
+                displayRecyclerView()
+                movieAdapter.submitList(localResults.toList(), this@MainActivity)
+            } else {
+                hideRecyclerView()
+            }
+            movie_recyclerview.adapter?.notifyDataSetChanged()
         }
     }
 
     // a dialog that will be opened when the server returns an error (403)
-    fun openServerBusyDialog(){
+    fun openServerBusyDialog() {
         val serverBusyDialog = ServerBusyDialog()
         serverBusyDialog.show(supportFragmentManager, "server busy dialog")
     }
 
-    private fun displayRecyclerView(){
+    private fun displayRecyclerView() {
         movie_recyclerview.visibility = View.VISIBLE
         no_results_text.visibility = View.GONE
     }
 
-    private fun hideRecyclerView(){
+    private fun hideRecyclerView() {
         no_results_text.visibility = View.VISIBLE
         movie_recyclerview.visibility = View.GONE
     }
