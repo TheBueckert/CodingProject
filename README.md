@@ -1,3 +1,3 @@
 # CodingProject
 
-This app take a search term and uses the Itunes Search api to return a list of avilable movies matching the term
+This app takes a search term and uses the Itunes Search API to return a list of available movies that match the term
