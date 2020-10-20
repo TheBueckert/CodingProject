@@ -68,7 +68,7 @@ class MovieRecyclerAdapter: RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
             Glide.with(itemView.context)
                 .applyDefaultRequestOptions(requestOptions)
-                .load(formatUrl(result.artworkUrl100))
+                .load(result.artworkUrl100?.let { formatUrl(it) })
                 .into(movie_image)
             itemView.setOnClickListener(this)
 

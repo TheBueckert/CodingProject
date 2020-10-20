@@ -1,9 +1,12 @@
 package com.clyde.codingchallenge.Activities
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.SearchView
 import android.widget.Toast
@@ -16,6 +19,7 @@ import com.clyde.codingchallenge.R
 import com.clyde.codingchallenge.RecyclerRelatedClasses.ItemSpacingDecoration
 import com.clyde.codingchallenge.RecyclerRelatedClasses.MovieRecyclerAdapter
 import com.clyde.codingchallenge.ViewModels.MainActivityViewModel
+import com.clyde.codingchallenge.models.Result
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import kotlinx.android.synthetic.main.activity_main.*
@@ -40,7 +44,9 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
     private lateinit var mainActivityViewModel: MainActivityViewModel
     private lateinit var movieAdapter: MovieRecyclerAdapter
     private var defaultInit: Boolean = true
+    private val TAG = "Main Activity"
     private var searchTerm: String? = null
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -153,24 +159,21 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
     }
 
     // This is the required implementation of the abstract function for clicks, from the ViewHolder Class
-
+    // will load viewMovieActivity with the Result object of the clicked movie
     override fun onMovieClick(position: Int) {
-        val tempResult =
-            mainActivityViewModel.moviesQueryResultObject.value?.results?.get(position)// pulling an item from the liveData, storing it in case another Api request goes through
-        val bottomSheet = MovieBottomSheetDialog()
-        val bundle =
-            Bundle()                                                                       // passing data to the BottomSheetDialog
-        if (tempResult != null) {
-            bundle.putString("title", tempResult.trackName)
-            bundle.putString("genre", tempResult.primaryGenreName)
-            bundle.putString("cast", tempResult.artistName)
-            bundle.putString("description", tempResult.longDescription)
-            bundle.putString("img_url", tempResult.artworkUrl100)
-            bottomSheet.arguments = bundle
-            bottomSheet.show(supportFragmentManager, "Movie Display")
-        } else {
-            Toast.makeText(this, "Something went wrong :(", Toast.LENGTH_SHORT).show()
+
+        val tempResult = mainActivityViewModel.moviesQueryResultObject.value?.results?.get(position)// pulling an item from the liveData, storing it in case another Api request goes through
+        if(tempResult!=null) {
+            val intent = Intent(this, ViewMovieActivity::class.java)
+            intent.putExtra("result", tempResult)
+            startActivity(intent)
         }
+        else{
+            Log.e(TAG, "onMovieClick: failed to load movie")
+            Toast.makeText(this,"Failed to load movie", Toast.LENGTH_LONG).show()
+
+        }
+
     }
 
 
