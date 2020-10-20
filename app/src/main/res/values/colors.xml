@@ -6,4 +6,6 @@
     <color name="jet">#343434 </color>
     <color name="transparent">#80000000</color>
     <color name="text_grey">#A9A9A9</color>
+    <color name="button_confirm">#448AFF</color>
+    <color name= "button_deny">#9E9E9E</color>
 </resources>
