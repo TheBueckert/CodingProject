@@ -21,8 +21,9 @@ import com.clyde.codingchallenge.RecyclerRelatedClasses.MovieRecyclerAdapter
 import com.clyde.codingchallenge.ViewModels.MainActivityViewModel
 import com.clyde.codingchallenge.models.Result
 import io.realm.Realm
-import io.realm.RealmConfiguration
+import io.realm.kotlin.where
 import kotlinx.android.synthetic.main.activity_main.*
+import java.lang.Exception
 
 
 /*This project has more comments than I would normally leave, but I learned a lot
@@ -52,11 +53,12 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+       // realm must be initialized with context for viewholder
+        Realm.init(this)
         setListeners()
         setUpViewModel()
-        Realm.init(this)
 
-        //val realm = Realm.getDefaultInstance()
+
     }
 
     // Included as a way to cancel coroutines of Failed Api calls
@@ -71,18 +73,15 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
 
         mainActivityViewModel.moviesQueryResultObject.observe(this, Observer {
             // if this is the firstTime initializing the ViewModel it will Initialize the RecyclerView too
-            if (defaultInit) {
-                showing_results_text.visibility = View.VISIBLE
-                initRecyclerView()
-                defaultInit = false
-                lets_search_text.visibility = View.GONE
 
-            }
+            checkRecyclerInitialization()
+
 
             // if the repo returns a null value for the live data, display a server error dialog
             if (mainActivityViewModel.moviesQueryResultObject.value == null ){
                 openServerBusyDialog()
             }
+
             // Observing the LiveData, When it changes it will update the recyclerview,  but only using the Results Array for the Recyclerview
             mainActivityViewModel.moviesQueryResultObject.value?.results?.let { resultsArray ->
                 if (resultsArray.isNotEmpty()) {
@@ -90,6 +89,8 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
                     movieAdapter.submitList(
                         resultsArray, this
                     )
+                    // all search results will be copied to realm
+                    mainActivityViewModel.copyToRealm(resultsArray)
                     // if the results array was empty, Display no results Text
                 } else hideRecyclerView()
             }
@@ -100,6 +101,15 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
 
 
 
+    }
+    // this function will intialize the recyclerview if it isn't created otherwise
+    private fun checkRecyclerInitialization(){
+        if (defaultInit) {
+            showing_results_text.visibility = View.VISIBLE
+            initRecyclerView()
+            defaultInit = false
+            lets_search_text.visibility = View.GONE
+        }
     }
 
     // This recyclerview uses a 2 row grid Layout, and a separate class for applying padding ar runtime
@@ -130,12 +140,26 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
                 main_searchview.clearFocus()
 
                 if (isInternetAvailable()) {
+
                     if (searchTerm != null) {
                         showing_results_text.setText("Showing results for: $searchTerm")
                         mainActivityViewModel.setSearchTerm(searchTerm!!)
                     }
                     // this starts a loop in confirm or deny until a choice is made
                 } else openDialog()
+                                               /*
+                                                val localResults = mainActivityViewModel.searchLocallyInRealm(searchTerm)
+                                                 if(localResults!=null){
+                            checkRecyclerInitialization()
+                            displayRecyclerView()
+                            movieAdapter.submitList(localResults.toList(), this@MainActivity)
+                            else{
+                            hideRecyclerView()
+                            }
+                            movie_recyclerview.adapter?.notifyDataSetChanged()
+                                               
+                                               */
+
 
                 return true
             }
@@ -159,14 +183,19 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
     }
 
     // This is the required implementation of the abstract function for clicks, from the ViewHolder Class
-    // will load viewMovieActivity with the Result object of the clicked movie
-    override fun onMovieClick(position: Int) {
 
-        val tempResult = mainActivityViewModel.moviesQueryResultObject.value?.results?.get(position)// pulling an item from the liveData, storing it in case another Api request goes through
-        if(tempResult!=null) {
+
+
+       
+    // will load viewMovieActivity with the Result object of the clicked movie
+    override fun onMovieClick(result: Result) {
+
+      
+        if(result!=null) {
             val intent = Intent(this, ViewMovieActivity::class.java)
             intent.putExtra("result", tempResult)
             startActivity(intent)
+
         }
         else{
             Log.e(TAG, "onMovieClick: failed to load movie")
@@ -184,6 +213,7 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
         val isConnected: Boolean = activeNetwork?.isConnectedOrConnecting == true
         return isConnected
     }
+
 
     // Create and display a dialog that explains there is no internet connection
     // the choice on the dialog will be returned to the method below
@@ -227,4 +257,5 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
         no_results_text.visibility = View.VISIBLE
         movie_recyclerview.visibility = View.GONE
     }
+
 }
