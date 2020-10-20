@@ -1,10 +1,13 @@
 package com.clyde.codingchallenge.models
 
+import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
 
 // This is the form that JSON objects take in the array returned from a query
 // Required to have default values for the empty constructor required by RealmObject
+@Parcelize
 open class Result(
     var artistName: String? = null,
     var artworkUrl100: String? = null,
@@ -45,8 +48,9 @@ open class Result(
     var trackTimeMillis: Int = 0,
     var trackViewUrl: String? = null,
     var wrapperType: String? = null
-) :RealmObject(
+) : Parcelable, RealmObject(
 
 ){
 
 }
+

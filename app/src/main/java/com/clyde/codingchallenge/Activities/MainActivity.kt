@@ -1,6 +1,8 @@
 package com.clyde.codingchallenge.Activities
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import android.os.Bundle
@@ -36,12 +38,16 @@ https://www.youtube.com/watch?v=rAk1j2CmPJs&feature=emb_title Retrofit REST Clie
 
 // This class controls the Main_activity Layout as well as the RecyclerView, api calls are offloaded
 // The Listener for click activities must implemented from the viewHolder class for clicks on items
-class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.OnMovieListener {
+class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.OnMovieListener,
+    NoInternetDialog.noInternetDialogListener {
 
     // Initial Variables
     private lateinit var mainActivityViewModel: MainActivityViewModel
     private lateinit var movieAdapter: MovieRecyclerAdapter
     private var defaultInit: Boolean = true
+    private val TAG = "Main Activity"
+    private var searchTerm: String? = null
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,7 +57,6 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
         Realm.init(this)
         setListeners()
         setUpViewModel()
-
 
 
     }
@@ -68,26 +73,32 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
 
         mainActivityViewModel.moviesQueryResultObject.observe(this, Observer {
             // if this is the firstTime initializing the ViewModel it will Initialize the RecyclerView too
+
             checkRecyclerInitialization()
+
+
+            // if the repo returns a null value for the live data, display a server error dialog
+            if (mainActivityViewModel.moviesQueryResultObject.value == null ){
+                openServerBusyDialog()
+            }
+
             // Observing the LiveData, When it changes it will update the recyclerview,  but only using the Results Array for the Recyclerview
             mainActivityViewModel.moviesQueryResultObject.value?.results?.let { resultsArray ->
                 if (resultsArray.isNotEmpty()) {
-                    movie_recyclerview.visibility = View.VISIBLE
-                    no_results_text.visibility = View.GONE
+                    displayRecyclerView()
                     movieAdapter.submitList(
                         resultsArray, this
                     )
                     // all search results will be copied to realm
                     mainActivityViewModel.copyToRealm(resultsArray)
                     // if the results array was empty, Display no results Text
-                } else {
-                    no_results_text.visibility = View.VISIBLE
-                    movie_recyclerview.visibility = View.GONE
-                }
+                } else hideRecyclerView()
             }
+
             // This could be changed to NotifyItemRangeChanged for smoother UX
             movie_recyclerview.adapter?.notifyDataSetChanged()
         })
+
 
 
     }
@@ -124,63 +135,74 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
         // This Listener will set the live data String that will kick off a query in the ViewModel
         main_searchview.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(p0: String?): Boolean {
+                searchTerm = p0
 
                 main_searchview.clearFocus()
 
                 if (isInternetAvailable()) {
-                    if (p0 != null) {
-                        showing_results_text.setText("Showing results for: $p0")
-                        mainActivityViewModel.setSearchTerm(p0)
-                    }
-                    // the handling of this function will be modified. The flow of the app is different on different branches
-                } else {
-                    if (p0 != null) {
-                        Toast.makeText(applicationContext, "You are not connected to the internet :(", Toast.LENGTH_LONG).show()
-                        val localResults = mainActivityViewModel.searchLocallyInRealm(p0)
 
-                        if(localResults!=null){
+                    if (searchTerm != null) {
+                        showing_results_text.setText("Showing results for: $searchTerm")
+                        mainActivityViewModel.setSearchTerm(searchTerm!!)
+                    }
+                    // this starts a loop in confirm or deny until a choice is made
+                } else openDialog()
+                                               /*
+                                                val localResults = mainActivityViewModel.searchLocallyInRealm(searchTerm)
+                                                 if(localResults!=null){
                             checkRecyclerInitialization()
-                            movie_recyclerview.visibility = View.VISIBLE
-                            no_results_text.visibility = View.GONE
+                            displayRecyclerView()
                             movieAdapter.submitList(localResults.toList(), this@MainActivity)
-                        }
+                            else{
+                            hideRecyclerView()
+                            }
+                            movie_recyclerview.adapter?.notifyDataSetChanged()
+                                               
+                                               */
 
-                        else{
-                            no_results_text.visibility = View.VISIBLE
-                            movie_recyclerview.visibility = View.GONE
-                        }
-
-                    }
-                    movie_recyclerview.adapter?.notifyDataSetChanged()
-
-                }
 
                 return true
             }
 
 
-            override fun onQueryTextChange(p0: String?): Boolean = false
+            // the search will also happen automatically when text is input,
+            // the itunes api only allows Approx. 20 searches per minute,
+            // if the server returns a 403 error the couroutines will be cancelled and errors will show
+
+            override fun onQueryTextChange(p0: String?): Boolean{
+                searchTerm = p0
+                if (isInternetAvailable()) {
+                    if (searchTerm != null) {
+                        showing_results_text.setText("Showing results for: $searchTerm")
+                        mainActivityViewModel.setSearchTerm(searchTerm!!)
+                    }
+                }
+                return true
+            }
         })
     }
 
     // This is the required implementation of the abstract function for clicks, from the ViewHolder Class
 
+
+
+       
+    // will load viewMovieActivity with the Result object of the clicked movie
     override fun onMovieClick(result: Result) {
 
-        val bottomSheet = MovieBottomSheetDialog()
-        val bundle =
-            Bundle()                                                                       // passing data to the BottomSheetDialog
-        if (result != null) {
-            bundle.putString("title", result.trackName)
-            bundle.putString("genre", result.primaryGenreName)
-            bundle.putString("cast", result.artistName)
-            bundle.putString("description", result.longDescription)
-            bundle.putString("img_url", result.artworkUrl100)
-            bottomSheet.arguments = bundle
-            bottomSheet.show(supportFragmentManager, "Movie Display")
-        } else {
-            Toast.makeText(this, "Something went wrong :(", Toast.LENGTH_SHORT).show()
+      
+        if(result!=null) {
+            val intent = Intent(this, ViewMovieActivity::class.java)
+            intent.putExtra("result", tempResult)
+            startActivity(intent)
+
         }
+        else{
+            Log.e(TAG, "onMovieClick: failed to load movie")
+            Toast.makeText(this,"Failed to load movie", Toast.LENGTH_LONG).show()
+
+        }
+
     }
 
 
@@ -192,5 +214,48 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
         return isConnected
     }
 
+
+    // Create and display a dialog that explains there is no internet connection
+    // the choice on the dialog will be returned to the method below
+    fun openDialog() {
+        val noInternetDialog = NoInternetDialog()
+        noInternetDialog.show(supportFragmentManager, "no internet dialog")
+    }
+
+    // The implemented method from NoInternetDialog. Internet connection will be checked again
+    // the user can search again. If the connection is restored they can search
+    //  if there is still no connection another dialog will be opened,
+    // if they choose to search locally, that case will be handled here
+
+    override fun confirmOrDeny(choice: Boolean) {
+        if (choice) {
+            if (isInternetAvailable()) {
+                if (searchTerm != null) {
+                    showing_results_text.setText("Showing results for: $searchTerm")
+                    mainActivityViewModel.setSearchTerm(searchTerm!!)
+                }
+            } else openDialog()
+        }
+        else {
+            //TODO
+            Toast.makeText(this, "searching", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // a dialog that will be opened when the server returns an error (403)
+    fun openServerBusyDialog(){
+        val serverBusyDialog = ServerBusyDialog()
+        serverBusyDialog.show(supportFragmentManager, "server busy dialog")
+    }
+
+    private fun displayRecyclerView(){
+        movie_recyclerview.visibility = View.VISIBLE
+        no_results_text.visibility = View.GONE
+    }
+
+    private fun hideRecyclerView(){
+        no_results_text.visibility = View.VISIBLE
+        movie_recyclerview.visibility = View.GONE
+    }
 
 }
