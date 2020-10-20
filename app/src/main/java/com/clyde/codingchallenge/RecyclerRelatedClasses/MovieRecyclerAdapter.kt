@@ -57,7 +57,9 @@ class MovieRecyclerAdapter: RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         val movie_title: TextView = itemView.movie_title_textview
         val movie_image: ImageView = itemView.movie_imageview
+        lateinit var result: Result
         fun bind(result: Result){
+            this.result =result
 
             movie_title.setText(result.trackName)
 
@@ -76,12 +78,12 @@ class MovieRecyclerAdapter: RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         // the onclick listener will return the position of the item to the calling listener to execute an action
         override fun onClick(p0: View?) {
-            onMovieListener.onMovieClick(adapterPosition)
+            onMovieListener.onMovieClick(result)
         }
         // THIS INTERFACE IS REQUIRED TO BE IMPLEMENTED WITH THE RECYCLER VIEW IN ITS CALLING ACTIVITY
         // then pass the interface to the Adapter, then to the Viewholder to complete implementation
         interface OnMovieListener{
-            fun onMovieClick(position: Int)
+            fun onMovieClick(result: Result)
         }
 
         // Formats urls to return a higher resolution image

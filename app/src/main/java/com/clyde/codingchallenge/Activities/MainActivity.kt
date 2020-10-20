@@ -151,6 +151,7 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
                         }
 
                     }
+                    movie_recyclerview.adapter?.notifyDataSetChanged()
 
                 }
 
@@ -164,18 +165,17 @@ class MainActivity : AppCompatActivity(), MovieRecyclerAdapter.MovieViewHolder.O
 
     // This is the required implementation of the abstract function for clicks, from the ViewHolder Class
 
-    override fun onMovieClick(position: Int) {
-        val tempResult =
-            mainActivityViewModel.moviesQueryResultObject.value?.results?.get(position)// pulling an item from the liveData, storing it in case another Api request goes through
+    override fun onMovieClick(result: Result) {
+
         val bottomSheet = MovieBottomSheetDialog()
         val bundle =
             Bundle()                                                                       // passing data to the BottomSheetDialog
-        if (tempResult != null) {
-            bundle.putString("title", tempResult.trackName)
-            bundle.putString("genre", tempResult.primaryGenreName)
-            bundle.putString("cast", tempResult.artistName)
-            bundle.putString("description", tempResult.longDescription)
-            bundle.putString("img_url", tempResult.artworkUrl100)
+        if (result != null) {
+            bundle.putString("title", result.trackName)
+            bundle.putString("genre", result.primaryGenreName)
+            bundle.putString("cast", result.artistName)
+            bundle.putString("description", result.longDescription)
+            bundle.putString("img_url", result.artworkUrl100)
             bottomSheet.arguments = bundle
             bottomSheet.show(supportFragmentManager, "Movie Display")
         } else {
