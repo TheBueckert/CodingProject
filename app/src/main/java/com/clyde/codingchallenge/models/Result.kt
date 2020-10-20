@@ -1,43 +1,52 @@
 package com.clyde.codingchallenge.models
 
+import io.realm.RealmObject
+import io.realm.annotations.PrimaryKey
+
 // This is the form that JSON objects take in the array returned from a query
-data class Result(
-    val artistName: String,
-    val artworkUrl100: String,
-    val artworkUrl30: String,
-    val artworkUrl60: String,
-    val collectionArtistId: Int,
-    val collectionArtistViewUrl: String,
-    val collectionCensoredName: String,
-    val collectionExplicitness: String,
-    val collectionHdPrice: Double,
-    val collectionId: Int,
-    val collectionName: String,
-    val collectionPrice: Double,
-    val collectionViewUrl: String,
-    val contentAdvisoryRating: String,
-    val country: String,
-    val currency: String,
-    val discCount: Int,
-    val discNumber: Int,
-    val hasITunesExtras: Boolean,
-    val kind: String,
-    val longDescription: String,
-    val previewUrl: String,
-    val primaryGenreName: String,
-    val releaseDate: String,
-    val shortDescription: String,
-    val trackCensoredName: String,
-    val trackCount: Int,
-    val trackExplicitness: String,
-    val trackHdPrice: Double,
-    val trackHdRentalPrice: Double,
-    val trackId: Int,
-    val trackName: String,
-    val trackNumber: Int,
-    val trackPrice: Double,
-    val trackRentalPrice: Double,
-    val trackTimeMillis: Int,
-    val trackViewUrl: String,
-    val wrapperType: String
-)
+// Required to have default values for the empty constructor required by RealmObject
+open class Result(
+    var artistName: String? = null,
+    var artworkUrl100: String? = null,
+    var artworkUrl30: String? = null,
+    var artworkUrl60: String? = null,
+    var collectionArtistId: Int = 0,
+    var collectionArtistViewUrl: String? = null,
+    var collectionCensoredName: String? = null,
+    var collectionExplicitness: String? = null,
+    var collectionHdPrice: Double = 0.0,
+    var collectionId: Int = 0,
+    var collectionName: String? = null,
+    var collectionPrice: Double = 0.0,
+    var collectionViewUrl: String? = null,
+    var contentAdvisoryRating: String? = null,
+    var country: String? = null,
+    var currency: String? = null,
+    var discCount: Int = 0,
+    var discNumber: Int = 0,
+    var hasITunesExtras: Boolean? = null,
+    var kind: String? = null,
+    var longDescription: String? = null,
+    var previewUrl: String? = null,
+    var primaryGenreName: String? = null,
+    var releaseDate: String? = null,
+    var shortDescription: String? = null,
+    var trackCensoredName: String? = null,
+    var trackCount: Int = 0,
+    var trackExplicitness: String? = null,
+    var trackHdPrice: Double = 0.0,
+    var trackHdRentalPrice: Double = 0.0,
+    var trackId: Int = 0,
+    @PrimaryKey
+    var trackName: String? = null,
+    var trackNumber: Int = 0,
+    var trackPrice: Double = 0.0,
+    var trackRentalPrice: Double =0.0,
+    var trackTimeMillis: Int = 0,
+    var trackViewUrl: String? = null,
+    var wrapperType: String? = null
+) :RealmObject(
+
+){
+
+}
